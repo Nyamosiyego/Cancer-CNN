@@ -145,3 +145,144 @@ def training(X_train, y_train, X_test, y_test, tr):
         ly += f"{layer.name}        layer input: {layer.input}\n"
     greetings_disp.insert(tk.END, f"<<--LAYER ARCHITECTURE-->>\n\n{ly}\n\nNETWORK is trained with Accuracy of {scores[1]*100:.2f}%")
     return model
+
+def graphh():
+
+	# visualizing losses and accuracy
+	train_loss=hist.history['loss']
+	val_loss=hist.history['val_loss']
+	train_acc = hist.history['accuracy']
+	val_acc = hist.history['val_accuracy']
+	xc=range(numepochs)
+
+	plt.figure(1,figsize=(10,5))
+	plt.subplot(121)
+	plt.plot(xc,train_loss)
+	plt.plot(xc,val_loss)
+	plt.xlabel('num of Epochs')
+	plt.ylabel('loss')
+	plt.title('train_loss vs val_loss')
+	plt.grid(True)
+	plt.legend(['train','val'])
+	plt.style.use(['classic'])
+
+	#plt.figure(2,figsize=(7,5))
+	plt.subplot(122)
+	plt.plot(xc,train_acc)
+	plt.plot(xc,val_acc)
+	plt.xlabel('num of Epochs')
+	plt.ylabel('accuracy')
+	plt.title('train_acc vs val_acc')
+	plt.grid(True)
+
+	plt.legend(['train','val'],loc=4)
+	plt.style.use(['classic'])
+	plt.show()
+	
+def test_test(model):
+    test_image = X_test[0:1]
+    pa = model.predict(test_image)
+    predicted_class = np.argmax(pa, axis=1)
+    if predicted_class[0] == 0:
+        s = f"BENIGN with Accuracy: {pa[0][0]*100:.2f}%\n"
+    else:
+        s = f"MALIGNANT with Accuracy: {pa[0][1]*100:.2f}%\n"
+    return s
+
+def test_random(model, path):
+    if not isinstance(model, Sequential):
+        return "Error: Model not initialized. Please train the model first."
+    
+    test_image = cv2.imread(path)
+    if test_image is None:
+        return "Error: Unable to read the image file. Please check the file path and format."
+    
+    try:
+        test_image = cv2.resize(test_image, (140, 92))
+        test_image = test_image.reshape(1, 92, 140, 3)
+        test_image = test_image.astype('float32') / 255
+        pa = model.predict(test_image)
+        predicted_class = np.argmax(pa, axis=1)
+        if predicted_class[0] == 0:
+            s = f"BENIGN with Accuracy: {pa[0][0]*100:.2f}%\n"
+        else:
+            s = f"MALIGNANT with Accuracy: {pa[0][1]*100:.2f}%\n"
+    except Exception as e:
+        s = f"Error processing the image: {str(e)}\n"
+    return s
+
+def b_test_test():
+	greetings=test_test(model)
+	#create text field
+	greetings_disp =tk.Text(master=window,height=1,width=45 ,fg="white")
+	greetings_disp.grid(column=0,row=6)
+	greetings_disp.insert(tk.END , greetings)
+
+def b_random_test_show():
+	global path1
+	path=filedialog.askopenfilename(filetypes=(("JPG", ".jpg"), ("All files", "*.*")))
+	path1=path
+	img=cv2.imread(path1)
+	plt.imshow(img)
+	plt.show()
+	#greetings_disp =tk.Text(master=window,height=0,width=0 ,fg="white")
+	#greetings_disp.grid(column=0,row=10)
+	#greetings_disp.insert(tk.END , greetings)
+
+def b_random_test():
+    global model
+    if not isinstance(model, Sequential):
+        tk.messagebox.showerror("Error", "Model not initialized. Please train the model first.")
+        return
+    
+    path = filedialog.askopenfilename(filetypes=(("Image files", "*.jpg *.jpeg *.png *.bmp *.tif *.tiff"), ("All files", "*.*")))
+    if not path:  # User cancelled file selection
+        return
+    
+    greetings = test_random(model, path)
+    greetings_disp = tk.Text(master=window, height=1, width=45, fg="white")
+    greetings_disp.grid(column=0, row=12)
+    greetings_disp.insert(tk.END, greetings)
+    
+    try:
+        img = cv2.imread(path)
+        if img is not None:
+            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            plt.show()
+        else:
+            print("Error: Unable to display the image.")
+    except Exception as e:
+        print(f"Error displaying the image: {str(e)}")
+
+def b_training():
+    global model
+    model = training(X_train, y_train, X_test, y_test, tr)
+
+labelfont=('Arial', 40, 'bold')
+label1 = tk.Label(text="   Breast Cancer Detection using Deep Learning     ", anchor='n', font=labelfont , fg="midnight blue" , bg="mint cream")
+label1.grid(column=0,row=0)
+
+#buttons
+
+button1 = tk.Button(text="Start Training" , command= b_training , bg="powder blue")
+button1.grid(column=0,row=2)
+
+button2 = tk.Button(text="Test an Image from Dataset" , command=b_test_test , bg="powder blue")
+button2.grid(column=0,row=5)
+
+'''button3 = tk.Button(text="Display an Image" , command= b_random_test_show , bg="powder blue")
+button3.grid(column=0,row=8)'''
+
+button4 = tk.Button(text="Select an Image for Testing" , command= b_random_test, bg="powder blue")
+button4.grid(column=0,row=11)
+
+button5 = tk.Button(text="See Loss and Accuracy plots" , command= graphh, bg="powder blue")
+button5.grid(column=0,row=13)
+
+window.mainloop()
+
+
+
+
+
+
